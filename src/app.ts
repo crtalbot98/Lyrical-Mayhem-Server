@@ -3,7 +3,9 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import authRoute from './routes/auth.js';
+import getUserCode from './routes/auth/getUserCode.js';
+import getAccessToken from './routes/auth/getAccessToken.js';
+
 
 const port = process.env.PORT;
 const app = express();
@@ -16,7 +18,8 @@ app.use(express.static(__dirname + '/styles'));
 app.use(express.static(__dirname + '/js'));
 app.use(express.static(__dirname + '/config'));
 
-app.use('/auth', authRoute);
+app.use('/auth', getUserCode);
+app.use('/auth', getAccessToken);
 
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
