@@ -3,6 +3,7 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import cookieParser from 'cookie-parser';
 import getUserCode from './routes/auth/getUserCode.js';
 import getAccessToken from './routes/auth/getAccessToken.js';
 
@@ -17,6 +18,7 @@ app.use(bodyParser.json({limit: '50mb'}));
 app.use(express.static(__dirname + '/styles'));
 app.use(express.static(__dirname + '/js'));
 app.use(express.static(__dirname + '/config'));
+app.use(cookieParser());
 
 app.use('/auth', getUserCode);
 app.use('/auth', getAccessToken);
