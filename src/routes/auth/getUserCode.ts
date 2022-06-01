@@ -6,7 +6,7 @@ const router = express.Router();
 
 export default router.get('/getUserCode', (req: Request, res: Response): void => {
     const state = generateRandomString(16);
-    const scope = 'user-read-email user-read-private user-modify-playback-state user-read-recently-played user-read-playback-position playlist-read-collaborative user-read-currently-playing playlist-read-private';
+    const scope = 'user-read-email user-read-private user-modify-playback-state user-read-recently-played user-read-playback-position playlist-read-collaborative user-read-currently-playing playlist-read-private streaming';
     res.cookie('spotify_auth_state', state);
 
     const queryString = new URLSearchParams({
