@@ -3,22 +3,44 @@ import { Response, Request } from 'express';
 import Genius from "genius-lyrics";
 import axios from 'axios';
 
+interface lyricsWithError {
+  data: {
+    seconds?: number;
+    lyric: string;
+  }[] | string[];
+  error?: string
+}
+
 const router = express.Router();
 const lyricClient = new Genius.Client(process.env.GENIUS_LYRICS_ID);
 
 export default router.get('/getSongLyrics', async (req: Request, res: Response): Promise<void> => {
   const songName = req.query.songName.toString();
   const artistName = req.query.artistName.toString();
-  let lyrics;
+  let lyrics = await getTimestampedLyrics(songName, artistName);
+
+  if(lyrics.data.length < 1 || lyrics.error) lyrics = await getLyricsWithoutTimestamps(songName, artistName);
+  if(lyrics.error) res.status(500).send({ error: lyrics.error });
+  res.send(lyrics)
+});
+
+async function getTimestampedLyrics(songName: string, artistName: string): Promise<lyricsWithError> {
+  let lyrics = {} as lyricsWithError;
 
   try {
     const lyricsWithTimestamps = await axios.get(`https://api.textyl.co/api/lyrics?q=${artistName} ${songName}`);
-    lyrics = lyricsWithTimestamps.data
+    lyrics.data = lyricsWithTimestamps.data
   }
   catch(err) {
     console.log('ERROR :: getSongLyrics :: textyl api res', err);
-    lyrics = err.response.data
+    lyrics.error = err.response.data
   }
+
+  return lyrics
+}
+
+async function getLyricsWithoutTimestamps(songName: string, artistName: string): Promise<lyricsWithError> {
+  let lyrics = {} as lyricsWithError;
 
   try {
     const songsList = await lyricClient.songs.search(songName);
@@ -26,22 +48,22 @@ export default router.get('/getSongLyrics', async (req: Request, res: Response):
       return elm.artist.name.includes(artistName)
     });
 
-    if(songFromArtist.length >= 1 && lyrics === 'No lyrics available') {
+    if(songFromArtist.length >= 1) {
       const fullLyricsString = await songFromArtist[0].lyrics();
       const lyricsArray = fullLyricsString.split('\n');
-      
-      lyrics = lyricsArray.filter((elm) => {
-        return !elm.includes('[')
+
+      lyrics.data = lyricsArray.filter((elm) => {
+        return !elm.includes('[') || !elm.includes(']')
       })
     }
     else {
       throw new Error('No lyrics available')
     }
-
-    res.send(lyrics)
   }
   catch(err) {
     console.log('ERROR :: getSongLyrics', err);
-    res.send({ 'Error': err });
+    lyrics.error = err.response.data
   }
-});
+
+  return lyrics
+}
